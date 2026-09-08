@@ -480,18 +480,24 @@ function Dashboard() {
                               dataKey="temperature"
                               stroke="var(--chart-1)"
                               strokeWidth={2}
+                              isAnimationActive={false}
+                              type="monotone"
                               dot={{ r: 2 }}
                             />
                             <Line
                               dataKey="pressure"
                               stroke="var(--chart-2)"
                               strokeWidth={2}
+                              isAnimationActive={false}
+                              type="monotone"
                               dot={{ r: 2 }}
                             />
                             <Line
                               dataKey="vibration"
                               stroke="var(--chart-3)"
                               strokeWidth={2}
+                              isAnimationActive={false}
+                              type="monotone"
                               dot={{ r: 2 }}
                             />
                           </LineChart>
