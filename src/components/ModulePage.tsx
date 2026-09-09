@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import astronaut from "@/assets/astronaut.jpg";
+import astronaut from "@/assets/astronaut-realistic.jpg";
 import { alerts, timeline, trend } from "@/lib/mission-data";
 import { AlertRow, Gauge, PageHeader, Panel, StatCard } from "@/components/dashboard-ui";
 import { MissionGlobe } from "@/components/MissionGlobe";
@@ -101,7 +101,7 @@ function RocketModule() {
 }
 
 function AstronautModule({ brain = false }: { brain?: boolean }) {
-  return <><div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)]"><Panel title={brain ? "Neural Readiness" : "Astra-1 Crew"} icon={brain ? Brain : Heart}><div className="flex items-center gap-4"><img src={astronaut} alt="Astra-1 astronaut in flight suit and helmet" className="size-24 rounded-lg object-cover object-top" /><div><p className="font-display text-lg font-semibold">Commander Aria Sen</p><p className="text-xs text-muted-foreground">Mission day 28</p><span className="mt-2 inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/10 px-2 py-1 text-[10px] text-success"><span className="size-1.5 rounded-full bg-success" /> Ready for duty</span></div></div></Panel><div className="grid grid-cols-2 gap-3 lg:grid-cols-4"><Metric icon={brain ? Brain : Heart} label={brain ? "Cognitive score" : "Heart rate"} value={brain ? "94/100" : "72 bpm"} note="Within baseline" /><Metric icon={Timer} label={brain ? "Reaction time" : "Sleep"} value={brain ? "218 ms" : "7h 24m"} note="Improving" /><Metric icon={Activity} label={brain ? "Workload" : "Oxygen"} value={brain ? "Moderate" : "98%"} note="Nominal" /><Metric icon={Thermometer} label={brain ? "Stress index" : "Temperature"} value={brain ? "0.24" : "36.6 °C"} note="Stable" /></div></div><TelemetryChart title={brain ? "Cognitive Performance · 24 Hours" : "Crew Vital Trends · 24 Hours"} /></>;
+  return <><div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)]"><Panel title={brain ? "Neural Readiness" : "Astra-1 Crew"} icon={brain ? Brain : Heart}><div className="flex items-center gap-4"><img src={astronaut} alt="Astra-1 astronaut in realistic NASA spacesuit with helmet visor" className="size-24 rounded-lg object-cover object-top" /><div><p className="font-display text-lg font-semibold">Commander Aria Sen</p><p className="text-xs text-muted-foreground">Mission day 28</p><span className="mt-2 inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/10 px-2 py-1 text-[10px] text-success"><span className="size-1.5 rounded-full bg-success" /> Ready for duty</span></div></div></Panel><div className="grid grid-cols-2 gap-3 lg:grid-cols-4"><Metric icon={brain ? Brain : Heart} label={brain ? "Cognitive score" : "Heart rate"} value={brain ? "94/100" : "72 bpm"} note="Within baseline" /><Metric icon={Timer} label={brain ? "Reaction time" : "Sleep"} value={brain ? "218 ms" : "7h 24m"} note="Improving" /><Metric icon={Activity} label={brain ? "Workload" : "Oxygen"} value={brain ? "Moderate" : "98%"} note="Nominal" /><Metric icon={Thermometer} label={brain ? "Stress index" : "Temperature"} value={brain ? "0.24" : "36.6 °C"} note="Stable" /></div></div><TelemetryChart title={brain ? "Cognitive Performance · 24 Hours" : "Crew Vital Trends · 24 Hours"} /></>;
 }
 
 function MissionModule() {
@@ -109,7 +109,7 @@ function MissionModule() {
 }
 
 function OrbitModule() {
-  return <><div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,.75fr)]"><Panel title="Live Orbital View" icon={Orbit}><MissionGlobe /></Panel><div className="grid grid-cols-2 gap-3"><Metric icon={Orbit} label="Altitude" value="408 km" note="± 0.6 km" /><Metric icon={Zap} label="Velocity" value="7.66 km/s" note="Orbital speed" /><Metric icon={Radio} label="Ground link" value="98.7%" note="Bengaluru station" /><Metric icon={Timer} label="Next pass" value="18:42" note="In 34 minutes" /></div></div><TelemetryChart title="Altitude & Velocity History" /></>;
+  return <><div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,.75fr)]"><Panel title="Live Orbital View" icon={Orbit}><MissionGlobe showOrbit /></Panel><div className="grid grid-cols-2 gap-3"><Metric icon={Orbit} label="Altitude" value="408 km" note="± 0.6 km" /><Metric icon={Zap} label="Velocity" value="7.66 km/s" note="Orbital speed" /><Metric icon={Radio} label="Ground link" value="98.7%" note="Bengaluru station" /><Metric icon={Timer} label="Next pass" value="18:42" note="In 34 minutes" /></div></div><TelemetryChart title="Altitude & Velocity History" /></>;
 }
 
 function EnvironmentModule() {
@@ -123,7 +123,7 @@ function TwinModule() {
 function CopilotModule() {
   const [messages, setMessages] = useState([{ from: "ai", text: "All Astra-1 systems are available. Ask me about mission status, crew health, orbit, or active alerts." }]);
   const [draft, setDraft] = useState("");
-  const send = () => { if (!draft.trim()) return; const question = draft.trim(); setMessages((m) => [...m, { from: "user", text: question }, { from: "ai", text: `Astra-1 remains stable. Based on current telemetry, ${question.toLowerCase().includes("risk") ? "overall mission risk is low with one thermal trend under observation." : "all monitored values remain within operational limits."}`]); setDraft(""); };
+  const send = () => { if (!draft.trim()) return; const question = draft.trim(); setMessages((m) => [...m, { from: "user", text: question }, { from: "ai", text: `Astra-1 remains stable. Based on current telemetry, ${question.toLowerCase().includes("risk") ? "overall mission risk is low with one thermal trend under observation." : "all monitored values remain within operational limits."}` }]); setDraft(""); };
   return <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]"><Panel title="Mission Conversation" icon={Brain}><div className="flex h-[430px] flex-col"><div className="flex-1 space-y-3 overflow-y-auto pr-1">{messages.map((message, i) => <div key={`${message.from}-${i}`} className={`max-w-[85%] rounded-lg border p-3 text-xs leading-relaxed ${message.from === "user" ? "ml-auto border-primary/40 bg-primary/10" : "border-border bg-panel-elevated"}`}>{message.text}</div>)}</div><form className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2" onSubmit={(e) => { e.preventDefault(); send(); }}><input value={draft} onChange={(e) => setDraft(e.target.value)} className="h-10 min-w-0 rounded-md border border-border bg-secondary px-3 text-xs outline-none focus:border-primary" placeholder="Ask about the mission…" /><Button type="submit" size="icon" aria-label="Send question"><Send /></Button></form></div></Panel><Panel title="Suggested Analysis" icon={Zap}><div className="space-y-2">{["Summarize active risks", "Compare crew baselines", "Explain thermal trend", "Prepare shift handover"].map((q) => <Button key={q} variant="outline" className="h-auto w-full justify-start whitespace-normal py-3 text-left text-xs" onClick={() => setDraft(q)}>{q}</Button>)}</div></Panel></div>;
 }
 

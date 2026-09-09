@@ -10,33 +10,154 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiCopilotRouteImport } from './routes/ai-copilot'
+import { Route as AlertsRouteImport } from './routes/alerts'
+import { Route as AstronautHealthRouteImport } from './routes/astronaut-health'
+import { Route as DigitalTwinRouteImport } from './routes/digital-twin'
+import { Route as MissionStatusRouteImport } from './routes/mission-status'
+import { Route as NeuroscienceRouteImport } from './routes/neuroscience'
+import { Route as OrbitalTrackingRouteImport } from './routes/orbital-tracking'
+import { Route as RocketHealthRouteImport } from './routes/rocket-health'
+import { Route as SpaceEnvironmentRouteImport } from './routes/space-environment'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiCopilotRoute = AiCopilotRouteImport.update({
+  id: '/ai-copilot',
+  path: '/ai-copilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlertsRoute = AlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AstronautHealthRoute = AstronautHealthRouteImport.update({
+  id: '/astronaut-health',
+  path: '/astronaut-health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DigitalTwinRoute = DigitalTwinRouteImport.update({
+  id: '/digital-twin',
+  path: '/digital-twin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MissionStatusRoute = MissionStatusRouteImport.update({
+  id: '/mission-status',
+  path: '/mission-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NeuroscienceRoute = NeuroscienceRouteImport.update({
+  id: '/neuroscience',
+  path: '/neuroscience',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrbitalTrackingRoute = OrbitalTrackingRouteImport.update({
+  id: '/orbital-tracking',
+  path: '/orbital-tracking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RocketHealthRoute = RocketHealthRouteImport.update({
+  id: '/rocket-health',
+  path: '/rocket-health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpaceEnvironmentRoute = SpaceEnvironmentRouteImport.update({
+  id: '/space-environment',
+  path: '/space-environment',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai-copilot': typeof AiCopilotRoute
+  '/alerts': typeof AlertsRoute
+  '/astronaut-health': typeof AstronautHealthRoute
+  '/digital-twin': typeof DigitalTwinRoute
+  '/mission-status': typeof MissionStatusRoute
+  '/neuroscience': typeof NeuroscienceRoute
+  '/orbital-tracking': typeof OrbitalTrackingRoute
+  '/rocket-health': typeof RocketHealthRoute
+  '/space-environment': typeof SpaceEnvironmentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-copilot': typeof AiCopilotRoute
+  '/alerts': typeof AlertsRoute
+  '/astronaut-health': typeof AstronautHealthRoute
+  '/digital-twin': typeof DigitalTwinRoute
+  '/mission-status': typeof MissionStatusRoute
+  '/neuroscience': typeof NeuroscienceRoute
+  '/orbital-tracking': typeof OrbitalTrackingRoute
+  '/rocket-health': typeof RocketHealthRoute
+  '/space-environment': typeof SpaceEnvironmentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai-copilot': typeof AiCopilotRoute
+  '/alerts': typeof AlertsRoute
+  '/astronaut-health': typeof AstronautHealthRoute
+  '/digital-twin': typeof DigitalTwinRoute
+  '/mission-status': typeof MissionStatusRoute
+  '/neuroscience': typeof NeuroscienceRoute
+  '/orbital-tracking': typeof OrbitalTrackingRoute
+  '/rocket-health': typeof RocketHealthRoute
+  '/space-environment': typeof SpaceEnvironmentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/ai-copilot'
+    | '/alerts'
+    | '/astronaut-health'
+    | '/digital-twin'
+    | '/mission-status'
+    | '/neuroscience'
+    | '/orbital-tracking'
+    | '/rocket-health'
+    | '/space-environment'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/ai-copilot'
+    | '/alerts'
+    | '/astronaut-health'
+    | '/digital-twin'
+    | '/mission-status'
+    | '/neuroscience'
+    | '/orbital-tracking'
+    | '/rocket-health'
+    | '/space-environment'
+  id:
+    | '__root__'
+    | '/'
+    | '/ai-copilot'
+    | '/alerts'
+    | '/astronaut-health'
+    | '/digital-twin'
+    | '/mission-status'
+    | '/neuroscience'
+    | '/orbital-tracking'
+    | '/rocket-health'
+    | '/space-environment'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiCopilotRoute: typeof AiCopilotRoute
+  AlertsRoute: typeof AlertsRoute
+  AstronautHealthRoute: typeof AstronautHealthRoute
+  DigitalTwinRoute: typeof DigitalTwinRoute
+  MissionStatusRoute: typeof MissionStatusRoute
+  NeuroscienceRoute: typeof NeuroscienceRoute
+  OrbitalTrackingRoute: typeof OrbitalTrackingRoute
+  RocketHealthRoute: typeof RocketHealthRoute
+  SpaceEnvironmentRoute: typeof SpaceEnvironmentRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +169,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-copilot': {
+      id: '/ai-copilot'
+      path: '/ai-copilot'
+      fullPath: '/ai-copilot'
+      preLoaderRoute: typeof AiCopilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alerts': {
+      id: '/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/astronaut-health': {
+      id: '/astronaut-health'
+      path: '/astronaut-health'
+      fullPath: '/astronaut-health'
+      preLoaderRoute: typeof AstronautHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/digital-twin': {
+      id: '/digital-twin'
+      path: '/digital-twin'
+      fullPath: '/digital-twin'
+      preLoaderRoute: typeof DigitalTwinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mission-status': {
+      id: '/mission-status'
+      path: '/mission-status'
+      fullPath: '/mission-status'
+      preLoaderRoute: typeof MissionStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/neuroscience': {
+      id: '/neuroscience'
+      path: '/neuroscience'
+      fullPath: '/neuroscience'
+      preLoaderRoute: typeof NeuroscienceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orbital-tracking': {
+      id: '/orbital-tracking'
+      path: '/orbital-tracking'
+      fullPath: '/orbital-tracking'
+      preLoaderRoute: typeof OrbitalTrackingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rocket-health': {
+      id: '/rocket-health'
+      path: '/rocket-health'
+      fullPath: '/rocket-health'
+      preLoaderRoute: typeof RocketHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/space-environment': {
+      id: '/space-environment'
+      path: '/space-environment'
+      fullPath: '/space-environment'
+      preLoaderRoute: typeof SpaceEnvironmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiCopilotRoute: AiCopilotRoute,
+  AlertsRoute: AlertsRoute,
+  AstronautHealthRoute: AstronautHealthRoute,
+  DigitalTwinRoute: DigitalTwinRoute,
+  MissionStatusRoute: MissionStatusRoute,
+  NeuroscienceRoute: NeuroscienceRoute,
+  OrbitalTrackingRoute: OrbitalTrackingRoute,
+  RocketHealthRoute: RocketHealthRoute,
+  SpaceEnvironmentRoute: SpaceEnvironmentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
