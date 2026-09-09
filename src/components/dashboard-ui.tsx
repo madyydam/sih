@@ -1,4 +1,5 @@
 import { ArrowRight, ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode, ElementType } from "react";
 
 import { alerts } from "@/lib/mission-data";
@@ -7,12 +8,14 @@ export function Panel({
   title,
   icon: Icon,
   action,
+  actionTo,
   children,
   className = "",
 }: {
   title: string;
   icon: ElementType;
   action?: string;
+  actionTo?: "/rocket-health" | "/astronaut-health" | "/neuroscience" | "/mission-status" | "/orbital-tracking" | "/space-environment" | "/ai-copilot" | "/digital-twin" | "/alerts";
   children: ReactNode;
   className?: string;
 }) {
@@ -25,10 +28,10 @@ export function Panel({
           <Icon className="size-4 text-primary" />
           <h2 className="font-display text-sm font-semibold tracking-wide">{title}</h2>
         </div>
-        {action && (
-          <button className="flex items-center gap-1 text-xs text-primary transition-colors hover:text-accent">
+        {action && actionTo && (
+          <Link to={actionTo} className="flex items-center gap-1 text-xs text-primary transition-colors hover:text-accent">
             {action} <ArrowRight className="size-3" />
-          </button>
+          </Link>
         )}
       </header>
       <div className="p-4">{children}</div>
