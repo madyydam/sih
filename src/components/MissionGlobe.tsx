@@ -1,29 +1,48 @@
-import { useRef, useEffect, Suspense } from "react";
+import { useRef, useEffect, useMemo, Suspense } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { TextureLoader } from "three";
+
+// ─── Patch R3F reconciler to safely handle Vite/Tanstack devtools "data-tsd-source"
+if (typeof window !== "undefined") {
+  [
+    THREE.Object3D.prototype,
+    THREE.Material.prototype,
+    THREE.BufferGeometry.prototype,
+    THREE.BufferAttribute.prototype,
+  ].forEach((proto) => {
+    try {
+      (proto as unknown as Record<string, unknown>)["data-tsd-source"] = "";
+    } catch {
+      // ignore
+    }
+  });
+}
 
 // ─── Local textures (served from same origin — no CORS) ──────────────────────
 const DAY_URL      = "/textures/earth-day.jpg";
 const NIGHT_URL    = "/textures/earth-night.jpg";
 const CLOUD_URL    = "/textures/earth-clouds.jpg";
 const SPECULAR_URL = "/textures/earth-water.png";
-const BUMP_URL     = "/textures/earth-topology.png";
 
-// Sun direction in world space — matches the directional light at [5, 3, 5]
-const SUN_DIR = new THREE.Vector3(5, 3, 5).normalize();
+// Sun direction placed to the right and slightly front-right
+// Matches Reference Image 2:
+// - Right side catches sunlit crescent & electric blue atmospheric rim
+// - Left & center show night side with visible continent silhouettes, navy oceans, and golden city lights
+const SUN_DIR = new THREE.Vector3(1.8, 0.6, 0.25).normalize();
 
-// ─── Earth custom GLSL shader ─────────────────────────────────────────────────
+// ─── Custom Photorealistic Earth GLSL Shader ──────────────────────────────────
 const EARTH_VERT = /* glsl */ `
-  varying vec2  vUv;
-  varying vec3  vWorldNormal;
-  varying vec3  vViewPos;
+  varying vec2 vUv;
+  varying vec3 vWorldNormal;
+  varying vec3 vViewNormal;
+  varying vec3 vViewPos;
 
   void main() {
     vUv          = uv;
-    // World-space normal so the fixed world-space sun direction is usable directly
     vWorldNormal = normalize(mat3(modelMatrix) * normal);
+    vViewNormal  = normalize(normalMatrix * normal);
     vViewPos     = (modelViewMatrix * vec4(position, 1.0)).xyz;
     gl_Position  = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
@@ -36,52 +55,74 @@ const EARTH_FRAG = /* glsl */ `
   uniform sampler2D specMap;
   uniform vec3      sunDir;
 
-  varying vec2  vUv;
-  varying vec3  vWorldNormal;
-  varying vec3  vViewPos;
+  varying vec2 vUv;
+  varying vec3 vWorldNormal;
+  varying vec3 vViewNormal;
+  varying vec3 vViewPos;
 
   void main() {
-    vec3 N    = normalize(vWorldNormal);
+    vec3 N = normalize(vWorldNormal);
+    vec3 V = normalize(-vViewPos);
     float NdL = dot(N, sunDir);
 
-    // Soft terminator: day/night blend
-    float dayMix = smoothstep(-0.12, 0.30, NdL);
+    // Natural smooth terminator transition
+    float dayFactor = smoothstep(-0.12, 0.25, NdL);
 
-    // Day texture — slightly darkened for satellite realism
-    vec3 dayCol  = texture2D(dayMap, vUv).rgb * 0.78;
+    // 1. Texture samples
+    vec3 daySample   = texture2D(dayMap, vUv).rgb;
+    vec3 nightSample = texture2D(nightMap, vUv).rgb;
+    float waterMask  = texture2D(specMap, vUv).r;
+    float cloudMask  = texture2D(cloudMap, vUv).r;
 
-    // Night texture — boost & warm city lights
-    vec3 nightCol = texture2D(nightMap, vUv).rgb;
-    nightCol = pow(max(nightCol, vec3(0.0)), vec3(0.62)) * 1.9;
-    nightCol *= vec3(1.30, 1.10, 0.80); // warm golden tint
+    // 2. Night-side Terrain: visible continent silhouettes (Europe, Africa, Arabia, India)
+    // Land is dark slate/charcoal navy with subtle surface texture; ocean is deep midnight blue
+    vec3 nightLand = daySample * vec3(0.18, 0.24, 0.32);
+    vec3 nightOcean = vec3(0.015, 0.035, 0.075);
+    vec3 nightTerrain = mix(nightLand, nightOcean, waterMask);
 
-    vec3 earthCol = mix(nightCol, dayCol, dayMix);
+    // Subtle night clouds catching faint starlight
+    vec3 nightClouds = vec3(0.04, 0.07, 0.12);
+    nightTerrain = mix(nightTerrain, nightClouds, cloudMask * 0.35);
 
-    // Cloud layer
-    float cloudMask = texture2D(cloudMap, vUv).r;
-    vec3  cloudDay  = vec3(0.80, 0.85, 0.90);
-    vec3  cloudNight = vec3(0.01, 0.01, 0.02);
-    earthCol = mix(earthCol, mix(cloudNight, cloudDay, dayMix), cloudMask * 0.65);
+    // 3. Warm Golden City Lights (NASA Black Marble)
+    float lightLuma = max(nightSample.r * 1.4 + nightSample.g * 1.1 - nightSample.b * 1.0, 0.0);
+    float cityMask  = smoothstep(0.03, 0.25, lightLuma);
+    vec3 goldenCities = vec3(1.35, 1.15, 0.68) * pow(lightLuma, 1.1) * 3.0;
 
-    // Ocean specular highlight (view-space approximate)
-    float waterMask = texture2D(specMap, vUv).r;
+    vec3 nightFinal = nightTerrain + goldenCities * cityMask;
+
+    // 4. Sunlit Day-side
+    vec3 daySide = daySample * 0.85;
+    vec3 dayClouds = vec3(0.92, 0.96, 1.0);
+    daySide = mix(daySide, dayClouds, cloudMask * 0.55);
+
+    // 5. Planetary Day/Night Blend
+    vec3 surface = mix(nightFinal, daySide, dayFactor);
+
+    // 6. Ocean Specular Reflection on Sunlit Waters
     if (waterMask > 0.05 && NdL > 0.0) {
-      vec3 V    = normalize(-vViewPos);
-      vec3 sunV = normalize(vec3(0.65, 0.40, 0.65)); // approx sun in view space
-      vec3 R    = reflect(-sunV, normalize(mat3(viewMatrix) * N));
-      float spec = pow(max(dot(V, R), 0.0), 85.0);
-      earthCol  += vec3(0.12, 0.28, 0.55) * spec * waterMask * NdL * 0.50;
+      vec3 H = normalize(sunDir + V);
+      float spec = pow(max(dot(N, H), 0.0), 65.0);
+      surface += vec3(0.22, 0.55, 0.95) * spec * waterMask * NdL * 0.70;
     }
 
-    // Minimum brightness so the deep-night side isn't completely black
-    earthCol = max(earthCol, vec3(0.010));
+    // 7. Luminous Electric Blue Atmospheric Rim
+    float fresnel = 1.0 - max(dot(normalize(vViewNormal), vec3(0.0, 0.0, 1.0)), 0.0);
+    fresnel = pow(fresnel, 2.7);
 
-    gl_FragColor = vec4(earthCol, 1.0);
+    float sunFacing = dot(N, sunDir);
+    float rimSun = smoothstep(-0.30, 0.35, sunFacing);
+
+    vec3 atmoElectricBlue = vec3(0.12, 0.65, 1.0);
+    vec3 rimColor = mix(vec3(0.025, 0.065, 0.18), atmoElectricBlue, rimSun);
+    surface += rimColor * fresnel * (rimSun * 2.8 + 0.40);
+
+    gl_FragColor = vec4(surface, 1.0);
   }
 `;
 
-// ─── Atmospheric rim GLSL shader ─────────────────────────────────────────────
-const ATMO_VERT = /* glsl */ `
+// ─── Precision Outer Atmospheric Limb (electric blue crescent) ────────────────
+const ATMO_TIGHT_VERT = /* glsl */ `
   varying vec3 vNormal;
   varying vec3 vViewPos;
   void main() {
@@ -91,7 +132,8 @@ const ATMO_VERT = /* glsl */ `
   }
 `;
 
-const ATMO_FRAG = /* glsl */ `
+const ATMO_TIGHT_FRAG = /* glsl */ `
+  uniform vec3 sunDir;
   varying vec3 vNormal;
   varying vec3 vViewPos;
 
@@ -99,21 +141,16 @@ const ATMO_FRAG = /* glsl */ `
     vec3 N = normalize(vNormal);
     vec3 V = normalize(-vViewPos);
 
-    // Fresnel: strongest at grazing angles (the rim)
+    // Sharp exponential edge falloff hugging the planet curvature
     float rim = 1.0 - abs(dot(N, V));
-    rim = pow(rim, 2.6);
+    rim = pow(rim, 3.2);
 
-    // Brighter on the sun side
-    float sunFactor = dot(N, normalize(vec3(0.65, 0.40, 0.65))) * 0.5 + 0.5;
-    sunFactor = pow(sunFactor, 1.3);
+    // Glows prominently along the sunlit crescent and fades smoothly around limb
+    float sunFactor = smoothstep(-0.25, 0.40, dot(N, sunDir));
+    vec3 atmoColor = mix(vec3(0.03, 0.12, 0.30), vec3(0.15, 0.70, 1.0), sunFactor);
+    float alpha = rim * (sunFactor * 1.35 + 0.08);
 
-    vec3 rimColor = mix(
-      vec3(0.03, 0.10, 0.42),   // dim dark-blue on night edge
-      vec3(0.16, 0.52, 1.00),   // electric blue on day edge
-      sunFactor
-    );
-
-    gl_FragColor = vec4(rimColor, rim * 0.58);
+    gl_FragColor = vec4(atmoColor, alpha);
   }
 `;
 
@@ -122,16 +159,19 @@ function EarthMesh() {
   const meshRef = useRef<THREE.Mesh>(null);
 
   const [dayMap, nightMap, cloudMap, specMap] = useLoader(TextureLoader, [
-    DAY_URL, NIGHT_URL, CLOUD_URL, SPECULAR_URL,
+    DAY_URL,
+    NIGHT_URL,
+    CLOUD_URL,
+    SPECULAR_URL,
   ]);
 
-  // Improve texture quality
+  // Configure textures for sharp rendering
   const maps = [dayMap, nightMap, cloudMap, specMap];
   maps.forEach((t) => {
     if (!t) return;
     t.minFilter = THREE.LinearMipmapLinearFilter;
     t.magFilter = THREE.LinearFilter;
-    t.anisotropy = 4;
+    t.anisotropy = 8;
   });
 
   const uniforms = useRef({
@@ -143,58 +183,41 @@ function EarthMesh() {
   });
 
   useFrame(() => {
-    if (meshRef.current) meshRef.current.rotation.y += 0.003;
+    if (meshRef.current) {
+      meshRef.current.rotation.y += 0.003;
+    }
   });
 
   return (
-    <mesh ref={meshRef}>
-      <sphereGeometry args={[1, 72, 72]} />
-      <shaderMaterial
-        vertexShader={EARTH_VERT}
-        fragmentShader={EARTH_FRAG}
-        uniforms={uniforms.current}
-      />
-    </mesh>
+    <group>
+      {/* Primary Earth sphere */}
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[1, 72, 72]} />
+        <shaderMaterial
+          vertexShader={EARTH_VERT}
+          fragmentShader={EARTH_FRAG}
+          uniforms={uniforms.current}
+        />
+      </mesh>
+
+      {/* Atmospheric limb glow: hugging curvature */}
+      <mesh>
+        <sphereGeometry args={[1.015, 64, 64]} />
+        <shaderMaterial
+          vertexShader={ATMO_TIGHT_VERT}
+          fragmentShader={ATMO_TIGHT_FRAG}
+          uniforms={{ sunDir: { value: SUN_DIR } }}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.BackSide}
+        />
+      </mesh>
+    </group>
   );
 }
 
-// ─── Atmospheric inner rim (front-face additive) ──────────────────────────────
-function AtmosphereRim() {
-  return (
-    <mesh>
-      <sphereGeometry args={[1.055, 56, 56]} />
-      <shaderMaterial
-        vertexShader={ATMO_VERT}
-        fragmentShader={ATMO_FRAG}
-        uniforms={{ sunDir: { value: SUN_DIR } }}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        side={THREE.FrontSide}
-      />
-    </mesh>
-  );
-}
-
-// ─── Atmospheric outer halo (back-face) ───────────────────────────────────────
-function AtmosphereHalo() {
-  return (
-    <mesh>
-      <sphereGeometry args={[1.14, 56, 56]} />
-      <shaderMaterial
-        vertexShader={ATMO_VERT}
-        fragmentShader={ATMO_FRAG}
-        uniforms={{ sunDir: { value: SUN_DIR } }}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        side={THREE.BackSide}
-      />
-    </mesh>
-  );
-}
-
-// ─── Loading placeholder (shown while textures fetch) ────────────────────────
+// ─── Loading placeholder ──────────────────────────────────────────────────────
 function EarthLoadingFallback() {
   const meshRef = useRef<THREE.Mesh>(null);
   useFrame(() => {
@@ -203,19 +226,107 @@ function EarthLoadingFallback() {
   return (
     <mesh ref={meshRef}>
       <sphereGeometry args={[1, 32, 32]} />
-      <meshPhongMaterial color={new THREE.Color(0x0a1a3a)} />
+      <meshPhongMaterial color={new THREE.Color(0x061122)} />
     </mesh>
   );
 }
 
-// ─── Star field ───────────────────────────────────────────────────────────────
+// ─── Orbital Trajectory Path with Active Satellite Beacon ─────────────────────
+function OrbitalTrajectory({
+  radius = 1.25,
+  inclination = 0.52,
+  color = "#38bdf8",
+  speed = 0.45,
+}: {
+  radius?: number;
+  inclination?: number;
+  color?: string;
+  speed?: number;
+}) {
+  const satRef = useRef<THREE.Group>(null);
+
+  const linePoints = useMemo(() => {
+    const pts: THREE.Vector3[] = [];
+    const count = 96;
+    for (let i = 0; i <= count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const y = Math.sin(inclination) * z;
+      const zRot = Math.cos(inclination) * z;
+      pts.push(new THREE.Vector3(x, y, zRot));
+    }
+    return pts;
+  }, [radius, inclination]);
+
+  const lineGeom = useMemo(
+    () => new THREE.BufferGeometry().setFromPoints(linePoints),
+    [linePoints],
+  );
+
+  useFrame(({ clock }) => {
+    if (satRef.current) {
+      const t = clock.getElapsedTime() * speed;
+      const x = Math.cos(t) * radius;
+      const z = Math.sin(t) * radius;
+      const y = Math.sin(inclination) * z;
+      const zRot = Math.cos(inclination) * z;
+      satRef.current.position.set(x, y, zRot);
+    }
+  });
+
+  return (
+    <group>
+      {/* Orbit Trajectory Line */}
+      {/* @ts-expect-error line is a valid Three.js intrinsic element */}
+      <line geometry={lineGeom}>
+        <lineBasicMaterial color={color} transparent opacity={0.65} />
+      </line>
+
+      {/* Orbiting Satellite Pulse Beacon */}
+      <group ref={satRef}>
+        <mesh>
+          <sphereGeometry args={[0.024, 12, 12]} />
+          <meshBasicMaterial color="#38bdf8" />
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[0.05, 12, 12]} />
+          <meshBasicMaterial color="#00f0ff" transparent opacity={0.35} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+// ─── CAD Flight Coordinate Grid & Distance Rings for Earth ───────────────────
+function EarthCadFloor({ compact = false }: { compact?: boolean }) {
+  const yPos = compact ? -1.2 : -1.35;
+  return (
+    <group position={[0, yPos, 0]}>
+      {/* Graph-type CAD inspection grid */}
+      <gridHelper args={[6, 14, "#38bdf8", "#1e293b"]} />
+
+      {/* Concentric telemetry range rings */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.25, 1.28, 48]} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={0.35} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.9, 1.93, 48]} />
+        <meshBasicMaterial color="#0284c7" transparent opacity={0.2} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
+// ─── Deep space star field ────────────────────────────────────────────────────
 function StarField() {
   const buf = useRef<Float32Array | null>(null);
   if (!buf.current) {
-    const count = 2200;
+    const count = 1800;
     buf.current = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      const r     = 5 + Math.random() * 4;
+      const r     = 6 + Math.random() * 5;
       const theta = Math.random() * Math.PI * 2;
       const phi   = Math.acos(2 * Math.random() - 1);
       buf.current[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
@@ -228,49 +339,14 @@ function StarField() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[buf.current, 3]} />
       </bufferGeometry>
-      <pointsMaterial color={0xffffff} size={0.013} transparent opacity={0.65} sizeAttenuation />
+      <pointsMaterial color={0xffffff} size={0.012} transparent opacity={0.55} sizeAttenuation />
     </points>
-  );
-}
-
-// ─── Orbital overlay (Orbital Tracking page only) ────────────────────────────
-function OrbitOverlay() {
-  const pts: THREE.Vector3[] = [];
-  for (let i = 0; i <= 128; i++) {
-    const a = (i / 128) * Math.PI * 2;
-    pts.push(new THREE.Vector3(
-      Math.cos(a) * 1.38,
-      Math.sin(a) * 0.42,
-      Math.sin(a) * 1.31,
-    ));
-  }
-  const geo = new THREE.BufferGeometry().setFromPoints(pts);
-
-  const t = 0.28 * Math.PI * 2;
-  const spPos = new THREE.Vector3(Math.cos(t) * 1.38, Math.sin(t) * 0.42, Math.sin(t) * 1.31);
-
-  return (
-    <group>
-      <line>
-        <bufferGeometry attach="geometry" {...geo} />
-        <lineBasicMaterial color={0x00aaff} transparent opacity={0.35} />
-      </line>
-      <mesh position={spPos}>
-        <sphereGeometry args={[0.028, 10, 10]} />
-        <meshBasicMaterial color={0x00ffcc} />
-      </mesh>
-      <mesh position={spPos}>
-        <sphereGeometry args={[0.056, 10, 10]} />
-        <meshBasicMaterial color={0x00ffcc} transparent opacity={0.18} />
-      </mesh>
-    </group>
   );
 }
 
 // ─── Public component ─────────────────────────────────────────────────────────
 export function MissionGlobe({
   compact = false,
-  showOrbit = false,
 }: {
   compact?: boolean;
   showOrbit?: boolean;
@@ -301,40 +377,44 @@ export function MissionGlobe({
     <div
       ref={containerRef}
       className={`relative w-full ${height} overflow-hidden rounded-lg`}
-      style={{ background: "radial-gradient(ellipse at center, #06101e 0%, #010408 100%)" }}
-      aria-label="Interactive 3D Earth globe — Astra-1 orbital position"
+      style={{
+        background:
+          "radial-gradient(circle at 50% 40%, #152238 0%, #0d1626 55%, #080d17 100%)",
+      }}
+      aria-label="Interactive 3D Earth globe — Astra-1 orbital telemetry view"
     >
       <Canvas
-        camera={{ position: [0, 0, 2.55], fov: 44 }}
-        gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
+        camera={{ position: [0, 0.1, 2.5], fov: 42 }}
+        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         onCreated={({ gl }) => {
           gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-          gl.setClearColor(0x010408, 1);
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 0.9;
+          gl.toneMappingExposure = 1.05;
         }}
       >
-        {/* Very dim ambient — space has near-zero ambient */}
-        <ambientLight intensity={0.04} />
+        <ambientLight intensity={0.15} />
 
-        {/* Primary sun — strong warm directional */}
         <directionalLight
-          position={[5, 3, 5]}
-          intensity={1.9}
-          color={new THREE.Color(0xfff4e0)}
+          position={[3.5, 1.2, 0.5]}
+          intensity={2.2}
+          color={new THREE.Color(0xfff6ea)}
         />
-
-        {/* Faint blue fill from opposite side */}
-        <pointLight position={[-6, -2, -6]} intensity={0.07} color={new THREE.Color(0x1a3a88)} />
 
         <StarField />
 
+        {/* 1. CAD Coordinate Grid & Range Rings like Rocket3D */}
+        <EarthCadFloor compact={compact} />
+
+        {/* 2. Interactive 3D Earth Globe with Shading */}
         <Suspense fallback={<EarthLoadingFallback />}>
           <EarthMesh />
-          <AtmosphereHalo />
-          <AtmosphereRim />
-          {showOrbit && <OrbitOverlay />}
         </Suspense>
+
+        {/* 3. Primary Astra-1 Orbital Trajectory */}
+        <OrbitalTrajectory radius={1.26} inclination={0.52} color="#38bdf8" speed={0.45} />
+
+        {/* 4. Secondary Polar Observation Trajectory */}
+        <OrbitalTrajectory radius={1.42} inclination={1.42} color="#818cf8" speed={0.3} />
 
         <OrbitControls
           enableZoom={false}
@@ -347,11 +427,11 @@ export function MissionGlobe({
         />
       </Canvas>
 
-      {/* Edge vignette to blend into card background */}
+      {/* Soft edge vignette to blend seamlessly into card */}
       <div
         className="pointer-events-none absolute inset-0 rounded-lg"
         style={{
-          background: "radial-gradient(ellipse at center, transparent 50%, #010408bb 100%)",
+          background: "radial-gradient(circle at center, transparent 70%, #080d1788 100%)",
         }}
       />
     </div>

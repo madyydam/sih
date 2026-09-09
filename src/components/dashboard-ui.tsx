@@ -19,17 +19,18 @@ export function Panel({
   children: ReactNode;
   className?: string;
 }) {
+  const IconComp = Icon as React.ComponentType<{ className?: string }>;
   return (
     <section
       className={`rounded-xl border border-border bg-panel/80 shadow-[0_1px_0_0_oklch(1_0_0/6%)_inset] ${className}`}
     >
       <header className="flex items-center justify-between border-b border-border/70 px-4 py-3">
         <div className="flex items-center gap-2">
-          <Icon className="size-4 text-primary" />
+          <IconComp className="size-4 text-primary" />
           <h2 className="font-display text-sm font-semibold tracking-wide">{title}</h2>
         </div>
         {action && actionTo && (
-          <Link to={actionTo} className="flex items-center gap-1 text-xs text-primary transition-colors hover:text-accent">
+          <Link to={actionTo as "/"} className="flex items-center gap-1 text-xs text-primary transition-colors hover:text-accent">
             {action} <ArrowRight className="size-3" />
           </Link>
         )}
@@ -75,11 +76,12 @@ export function StatCard({
   statusClass?: string;
   children?: ReactNode;
 }) {
+  const IconComp = Icon as React.ComponentType<{ className?: string }>;
   return (
     <article className="rounded-xl border border-border bg-panel/80 p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className="size-4 text-primary" />
+          <IconComp className="size-4 text-primary" />
           <h3 className="text-[13px] font-medium text-foreground/90">{title}</h3>
         </div>
         <ChevronRight className="size-4 text-muted-foreground" />

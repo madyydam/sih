@@ -1,24 +1,35 @@
-# Perfect Replica Dashboard
+# ASTRA-X Mission Control Dashboard
 
-i want to make this exactly same daskboar  i  want this 100% same prome each and everything
+AI-Powered Space Mission Health, Tracking & Management System for the Astra-1 Mission.
 
-This project was built with [Lovable](https://lovable.dev).
+## Overview
 
-## Build with Lovable
+ASTRA-X is a next-generation orbital operations platform providing real-time telemetry, 3D planetary tracking, crew biometrics, and synchronized spacecraft digital twins.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/578569b8-d52c-4c45-9f57-0a5a553f957c).
+## Key Features
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+- **Photorealistic 3D Earth Globe**: High-fidelity NASA Black Marble night lights, satellite day textures, electric-blue atmospheric rim, and continuous real-time orbital visualization.
+- **3D Heavy Rocket & Spacecraft Digital Twin**: Interactive 3D WebGL models with 360° rotational inspection and live pulsing diagnostic issue hotspots.
+- **Biometric Health Telemetry**: Multi-vital crew monitoring including ECG, SpO2, core body temperature, and cognitive load metrics.
+- **Telemetry Trends & AI Copilot**: Predictive anomaly detection, propulsion charts, and conversational mission AI assistant.
+- **Mission Milestones & Alerts**: Severity-filtered event log and orbital milestone timelines.
 
-## Development
+## Tech Stack
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+- **Framework**: React 19, Vite, TanStack Router
+- **3D Graphics**: Three.js, React Three Fiber, Drei
+- **Data Visualization**: Recharts, Lucide Icons
+- **Styling**: Tailwind CSS, Radix UI
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+## Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
+
+# Build for production
+npm run build
 ```

@@ -11,6 +11,7 @@ import {
   Heart,
   Orbit,
   Radio,
+  Rocket,
   Send,
   ShieldCheck,
   Sun,
@@ -25,6 +26,9 @@ import astronaut from "@/assets/astronaut-realistic.jpg";
 import { alerts, timeline, trend } from "@/lib/mission-data";
 import { AlertRow, Gauge, PageHeader, Panel, StatCard } from "@/components/dashboard-ui";
 import { MissionGlobe } from "@/components/MissionGlobe";
+import { SpacecraftTwin } from "@/components/SpacecraftTwin";
+import { Rocket3D } from "@/components/Rocket3D";
+import { Spacesuit3D } from "@/components/Spacesuit3D";
 import { Button } from "@/components/ui/button";
 
 type ModuleKind =
@@ -58,10 +62,11 @@ const telemetry = Array.from({ length: 18 }, (_, index) => ({
 }));
 
 function Metric({ icon: Icon, label, value, note }: { icon: ElementType; label: string; value: string; note: string }) {
+  const IconComp = Icon as React.ComponentType<{ className?: string }>;
   return (
     <article className="rounded-lg border border-border bg-panel p-4">
       <div className="flex items-center justify-between">
-        <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary"><Icon className="size-4" /></span>
+        <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary"><IconComp className="size-4" /></span>
         <span className="text-[10px] text-success">LIVE</span>
       </div>
       <p className="mt-4 text-xs text-muted-foreground">{label}</p>
@@ -97,11 +102,110 @@ function TelemetryChart({ title = "Live Telemetry" }: { title?: string }) {
 }
 
 function RocketModule() {
-  return <><div className="grid grid-cols-2 gap-3 xl:grid-cols-4"><Metric icon={Thermometer} label="Engine temperature" value="782 °C" note="4% below limit" /><Metric icon={GaugeIcon} label="Chamber pressure" value="18.4 MPa" note="Nominal range" /><Metric icon={Wind} label="Vibration" value="0.18 g" note="Stable across stages" /><Metric icon={BatteryCharging} label="Power reserve" value="87%" note="6h 42m projected" /></div><div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]"><TelemetryChart title="Propulsion Telemetry" /><Panel title="System Health" icon={ShieldCheck}><div className="flex justify-center"><Gauge value={92} /></div><div className="mt-4 space-y-3">{["Propulsion", "Avionics", "Thermal control", "Communications"].map((item, i) => <div key={item}><div className="mb-1 flex justify-between text-[11px]"><span>{item}</span><span className="text-success">{96 - i * 3}%</span></div><div className="h-1.5 rounded-full bg-secondary"><div className="h-full rounded-full bg-success" style={{ width: `${96 - i * 3}%` }} /></div></div>)}</div></Panel></div></>;
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <Metric icon={Thermometer} label="Engine temperature" value="782 °C" note="4% below limit" />
+        <Metric icon={GaugeIcon} label="Chamber pressure" value="18.4 MPa" note="Nominal range" />
+        <Metric icon={Wind} label="Vibration" value="0.18 g" note="Stable across stages" />
+        <Metric icon={BatteryCharging} label="Power reserve" value="87%" note="6h 42m projected" />
+      </div>
+
+      <Panel title="Astra-1 Heavy Launch Vehicle · 3D Live Telemetry & Diagnostics" icon={Rocket}>
+        <Rocket3D />
+      </Panel>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <TelemetryChart title="Propulsion Telemetry" />
+        <Panel title="System Health" icon={ShieldCheck}>
+          <div className="flex justify-center">
+            <Gauge value={92} />
+          </div>
+          <div className="mt-4 space-y-3">
+            {["Propulsion", "Avionics", "Thermal control", "Communications"].map((item, i) => (
+              <div key={item}>
+                <div className="mb-1 flex justify-between text-[11px]">
+                  <span>{item}</span>
+                  <span className="text-success">{96 - i * 3}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-success"
+                    style={{ width: `${96 - i * 3}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+    </>
+  );
 }
 
 function AstronautModule({ brain = false }: { brain?: boolean }) {
-  return <><div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)]"><Panel title={brain ? "Neural Readiness" : "Astra-1 Crew"} icon={brain ? Brain : Heart}><div className="flex items-center gap-4"><img src={astronaut} alt="Astra-1 astronaut in realistic NASA spacesuit with helmet visor" className="size-24 rounded-lg object-cover object-top" /><div><p className="font-display text-lg font-semibold">Commander Aria Sen</p><p className="text-xs text-muted-foreground">Mission day 28</p><span className="mt-2 inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/10 px-2 py-1 text-[10px] text-success"><span className="size-1.5 rounded-full bg-success" /> Ready for duty</span></div></div></Panel><div className="grid grid-cols-2 gap-3 lg:grid-cols-4"><Metric icon={brain ? Brain : Heart} label={brain ? "Cognitive score" : "Heart rate"} value={brain ? "94/100" : "72 bpm"} note="Within baseline" /><Metric icon={Timer} label={brain ? "Reaction time" : "Sleep"} value={brain ? "218 ms" : "7h 24m"} note="Improving" /><Metric icon={Activity} label={brain ? "Workload" : "Oxygen"} value={brain ? "Moderate" : "98%"} note="Nominal" /><Metric icon={Thermometer} label={brain ? "Stress index" : "Temperature"} value={brain ? "0.24" : "36.6 °C"} note="Stable" /></div></div><TelemetryChart title={brain ? "Cognitive Performance · 24 Hours" : "Crew Vital Trends · 24 Hours"} /></>;
+  return (
+    <>
+      <div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)]">
+        <Panel title={brain ? "Neural Readiness" : "Astra-1 Crew"} icon={brain ? Brain : Heart}>
+          <div className="flex items-center gap-4">
+            <img
+              src={astronaut}
+              alt="Astra-1 astronaut in realistic NASA spacesuit with helmet visor"
+              className="size-24 rounded-lg object-cover object-top"
+            />
+            <div>
+              <p className="font-display text-lg font-semibold">Commander Aria Sen</p>
+              <p className="text-xs text-muted-foreground">Mission day 28</p>
+              <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/10 px-2 py-1 text-[10px] text-success">
+                <span className="size-1.5 rounded-full bg-success" /> Ready for duty
+              </span>
+            </div>
+          </div>
+        </Panel>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Metric
+            icon={brain ? Brain : Heart}
+            label={brain ? "Cognitive score" : "Heart rate"}
+            value={brain ? "94/100" : "72 bpm"}
+            note="Within baseline"
+          />
+          <Metric
+            icon={Timer}
+            label={brain ? "Reaction time" : "Sleep"}
+            value={brain ? "218 ms" : "7h 24m"}
+            note="Improving"
+          />
+          <Metric
+            icon={Activity}
+            label={brain ? "Workload" : "Oxygen"}
+            value={brain ? "Moderate" : "98%"}
+            note="Nominal"
+          />
+          <Metric
+            icon={Thermometer}
+            label={brain ? "Stress index" : "Temperature"}
+            value={brain ? "0.24" : "36.6 °C"}
+            note="Stable"
+          />
+        </div>
+      </div>
+
+      {/* 3D Extravehicular Mobility Unit (EMU) Spacesuit Diagnostics */}
+      {!brain && (
+        <Panel
+          title="Astra-1 Extravehicular Mobility Unit (EMU) · 3D Suit Diagnostics"
+          icon={ShieldCheck}
+        >
+          <Spacesuit3D />
+        </Panel>
+      )}
+
+      <TelemetryChart
+        title={brain ? "Cognitive Performance · 24 Hours" : "Crew Vital Trends · 24 Hours"}
+      />
+    </>
+  );
 }
 
 function MissionModule() {
@@ -117,7 +221,35 @@ function EnvironmentModule() {
 }
 
 function TwinModule() {
-  return <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_330px]"><Panel title="Astra-1 Systems Model" icon={Cpu}><div className="relative mx-auto grid aspect-square max-h-[520px] w-full max-w-[620px] place-items-center overflow-hidden rounded-lg border border-border bg-secondary/30"><div className="twin-orbit absolute size-[78%] rounded-full border border-primary/30" /><div className="twin-orbit twin-orbit-reverse absolute size-[55%] rounded-full border border-accent/25" /><div className="relative flex h-[72%] w-28 flex-col items-center"><div className="h-16 w-20 rounded-t-full border border-primary/70 bg-panel-elevated" /><div className="flex-1 w-24 border border-primary/70 bg-primary/10 shadow-[0_0_40px_var(--primary)]" /><div className="grid w-64 grid-cols-2 gap-3"><div className="h-20 skew-x-[-18deg] border border-primary/60 bg-primary/10" /><div className="h-20 skew-x-[18deg] border border-primary/60 bg-primary/10" /></div><div className="h-16 w-20 border-x border-primary/70 bg-panel-elevated" /></div><span className="absolute left-4 top-4 text-[10px] text-success">LIVE MODEL · SYNCED</span></div></Panel><Panel title="Twin Status" icon={Activity}><div className="flex justify-center"><Gauge value={99} label="Sync Fidelity" status="Synchronized" /></div><div className="mt-5 space-y-3">{["Propulsion model", "Thermal model", "Power model", "Attitude control", "Life support"].map((s, i) => <div key={s} className="flex items-center justify-between rounded-lg border border-border p-3 text-xs"><span>{s}</span><span className="text-success">{(99.9 - i * .2).toFixed(1)}%</span></div>)}</div></Panel></div>;
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_330px]">
+      <Panel title="Astra-1 Spacecraft Systems Model" icon={Cpu}>
+        <SpacecraftTwin />
+      </Panel>
+      <Panel title="Twin Status" icon={Activity}>
+        <div className="flex justify-center">
+          <Gauge value={99} label="Sync Fidelity" status="Synchronized" />
+        </div>
+        <div className="mt-5 space-y-3">
+          {[
+            "Propulsion model",
+            "Thermal model",
+            "Power model",
+            "Attitude control",
+            "Life support",
+          ].map((s, i) => (
+            <div
+              key={s}
+              className="flex items-center justify-between rounded-lg border border-border p-3 text-xs"
+            >
+              <span>{s}</span>
+              <span className="text-success">{(99.9 - i * 0.2).toFixed(1)}%</span>
+            </div>
+          ))}
+        </div>
+      </Panel>
+    </div>
+  );
 }
 
 function CopilotModule() {

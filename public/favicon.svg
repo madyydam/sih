@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="astraBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020814" />
+      <stop offset="100%" stop-color="#081b36" />
+    </linearGradient>
+    <linearGradient id="astraCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="100%" stop-color="#4facfe" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background circle with high-tech border -->
+  <circle cx="32" cy="32" r="30" fill="url(#astraBg)" stroke="#00f2fe" stroke-width="1.8" stroke-opacity="0.8" />
+
+  <!-- Orbital trajectory ring -->
+  <ellipse cx="32" cy="32" rx="23" ry="9" transform="rotate(-30 32 32)" fill="none" stroke="#00f2fe" stroke-width="1.2" stroke-dasharray="3 2" stroke-opacity="0.6" />
+
+  <!-- ASTRA Spacecraft Delta Chevron -->
+  <path d="M 32 14 L 43 45 L 32 38 L 21 45 Z" fill="url(#astraCyan)" filter="url(#glow)" />
+
+  <!-- Center Guidance Star Core -->
+  <circle cx="32" cy="31" r="2.5" fill="#ffffff" filter="url(#glow)" />
+</svg>

@@ -94,13 +94,14 @@ function Panel({
   children: React.ReactNode;
   className?: string;
 }) {
+  const IconComp = Icon as React.ComponentType<{ className?: string }>;
   return (
     <section
       className={`rounded-xl border border-border bg-panel/80 shadow-[0_1px_0_0_oklch(1_0_0/6%)_inset] ${className}`}
     >
       <header className="flex items-center justify-between border-b border-border/70 px-4 py-3">
         <div className="flex items-center gap-2">
-          <Icon className="size-4 text-primary" />
+          <IconComp className="size-4 text-primary" />
           <h2 className="font-display text-sm font-semibold tracking-wide">{title}</h2>
         </div>
         {action && actionTo && (
@@ -155,11 +156,12 @@ function StatCard({
   children?: React.ReactNode;
   linkTo?: string;
 }) {
+  const IconComp = Icon as React.ComponentType<{ className?: string }>;
   const content = (
     <article className="rounded-xl border border-border bg-panel/80 p-4 transition-colors hover:border-primary/40">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className="size-4 text-primary" />
+          <IconComp className="size-4 text-primary" />
           <h3 className="text-[13px] font-medium text-foreground/90">{title}</h3>
         </div>
         <span className="text-[10px] text-muted-foreground">›</span>
